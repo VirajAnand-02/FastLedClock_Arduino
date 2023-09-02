@@ -5,6 +5,9 @@
 
 CRGB leds[NUM_LEDS];
 uint8_t hue = 0;
+unsigned long milSec = millis();
+int number = 0;
+
 void setHue(){
   //
 }
@@ -60,43 +63,22 @@ void setDisplay(int dispNum, int num){// set black pixels to show characters
 void setup() {
   delay(3000);
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(30);
+  FastLED.setBrightness(10);
 
 }
 
 void loop() {
-  int number = 5;
+  if(number > 9)
+    number = 0;
   for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CHSV(hue + (i * 10), 255, 255);
-  }
+      leds[i] = CHSV(hue + (i * 10), 255, 255);
+    }
   EVERY_N_MILLISECONDS(15){
     hue++;
   }
-  // EVERY_N_SECONDS(1){
-  //   number++;
-  // }
+  EVERY_N_MILLISECONDS(1000){
+    number++;
+  }
   setDisplay(0, number);
   FastLED.show();
 }
-
-// #include <FastLED.h>
-// #define NUM_LEDS  18
-// #define LED_PIN   3
-// CRGB leds[NUM_LEDS];
-// uint8_t hue = 0;
-
-// void setup() {
-//   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-//   FastLED.setBrightness(10);
-// }
-
-// void loop() {
-//   for (int i = 0; i < NUM_LEDS; i++) {
-//     //leds[i] = CHSV(hue, 255, 255);
-//     leds[i] = CHSV(hue + (i * 10), 255, 255);
-//   }
-//   EVERY_N_MILLISECONDS(15){
-//     hue++;
-//   }
-//   FastLED.show();
-// }
