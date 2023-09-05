@@ -1,13 +1,18 @@
 #include<FastLED.h>
+#include "DHT.h"
 
+#define DHTPIN 2
+#define DHTTYPE DHT11
 #define NUM_LEDS 28
 #define LED_PIN 3
 #define BUZZER_PIN 4
+
+DHT dht(DHTPIN, DHTTYPE);
 CRGB leds[NUM_LEDS];
 uint8_t hue = 0;
 unsigned long milSec = millis();
 int number = 0000;
-int hrTen, hrOne, minTen, minOne, temperature = 20 humidity = 80;
+int hrTen, hrOne, minTen, minOne, temperature = 20, humidity = 80, time = 0000;
 bool toRing = false;
 
 void setHue(){
@@ -18,7 +23,7 @@ void setHue(){
     hue++;
   }
 }
-void setDisplayNumber(int num){// set black pixels to show characters
+void setDisplayNumber(int num){// set black pixels to show characters | num is a 4 digit number
   int zeroIndex = 0;// dispNum should be zero index
   int mod = 10000, div =1000;
   for(int i=0;i<4;i++){
@@ -74,8 +79,6 @@ void setDisplayNumber(int num){// set black pixels to show characters
   }
 }
 
-
-
 /*
 void setAlarm(int minuts){
   if(toRing){
@@ -99,8 +102,7 @@ void playBuzzer(){
 */
 
 void setTemp(){
-  //get temp
-  //temperature = ihbkknknkj(IDK);
+  temperature = dht.readTemperature();
   setDisplayNumber(temperature*100);
   leds[14 + 3] = CHSV(0, 0, 0);// degree symbol
   leds[14 + 4] = CHSV(0, 0, 0);
@@ -110,8 +112,7 @@ void setTemp(){
 }
 
 void setHumi(){
-  //get humi
-  //humidity = ihbkknknkj(IDK);
+  humidity = dht.readHumidity();
   setDisplayNumber(humidity*100);
   leds[14 + 0] = CHSV(0, 0, 0);// - symbol
   leds[14 + 1] = CHSV(0, 0, 0);
@@ -119,15 +120,26 @@ void setHumi(){
   leds[14 + 3] = CHSV(0, 0, 0);
   leds[14 + 4] = CHSV(0, 0, 0);
   leds[14 + 5] = CHSV(0, 0, 0);
-
   leds[21 + 1] = CHSV(0, 0, 0);// H
   leds[21 + 4] = CHSV(0, 0, 0);
+}
+
+void setTimer(){
+
+}
+
+void timeTracker(){
+  if(time > 9999)
+    time = 0000;
+  EVERY_N_MILLISECONDS(10){
+    time++;
+  }
 }
 
 void SetDisplay(int menu){
   switch(menu){
     case 1:// time
-      setDisplayNumber(number);
+      setDisplayNumber(time);
       break;
     case 2:// Temp
       setTemp();
@@ -148,15 +160,11 @@ void setup() {
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(10);
   pinMode(BUZZER_PIN, OUTPUT);
+  dht.begin();
 }
 
 void loop() {
-  if(number > 9999)
-    number = 0;
-  EVERY_N_MILLISECONDS(10){
-    number++;
-  }
-
+  timeTracker();
   setHue();
   SetDisplay(1);
   FastLED.show();
