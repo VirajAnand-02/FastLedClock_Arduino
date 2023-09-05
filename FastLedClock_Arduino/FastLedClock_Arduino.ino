@@ -12,7 +12,7 @@ CRGB leds[NUM_LEDS];
 uint8_t hue = 0;
 unsigned long milSec = millis();
 int number = 0000;
-int hrTen, hrOne, minTen, minOne, temperature = 20, humidity = 80, time = 0000;
+int hrTen, hrOne, minTen, minOne, temperature = 20, humidity = 80, time = 0000, menu = 1, timer = 10;
 bool toRing = false;
 
 void setHue(){
@@ -88,7 +88,7 @@ void setAlarm(int minuts){
     }
   }
 }
-
+*/
 void playBuzzer(){
   while (true) {
     EVERY_N_MILLISECONDS(500){
@@ -99,7 +99,6 @@ void playBuzzer(){
     }
   }
 }
-*/
 
 void setTemp(){
   temperature = dht.readTemperature();
@@ -125,15 +124,27 @@ void setHumi(){
 }
 
 void setTimer(){
+  if(timer != 0){
+    setDisplayNumber(timer);
+    EVERY_N_SECONDS(1){
+      timer--;
+    }
+  }else{
+    for (int i = 0; i < NUM_LEDS; i++) {
+      leds[i] = CHSV(i, 255, 255);
+    }
+    setDisplayNumber(timer);
+    playBuzzer();
+  }
 
 }
 
-void timeTracker(){
-  if(time > 9999)
+void timeTracker(int status){
+  if(time > 2359)
     time = 0000;
-  EVERY_N_MILLISECONDS(10){
-    time++;
-  }
+    EVERY_N_MILLISECONDS(10){
+      time++;
+    }
 }
 
 void SetDisplay(int menu){
@@ -156,7 +167,7 @@ void SetDisplay(int menu){
 }
 
 void setup() {
-  delay(3000);
+  delay(500);
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(10);
   pinMode(BUZZER_PIN, OUTPUT);
@@ -164,8 +175,8 @@ void setup() {
 }
 
 void loop() {
-  timeTracker();
+  timeTracker(menu);
   setHue();
-  SetDisplay(1);
+  SetDisplay(menu);
   FastLED.show();
 }
