@@ -15,12 +15,24 @@ int number = 0000;
 int hrTen, hrOne, minTen, minOne, temperature = 20, humidity = 80, time = 0000, menu = 1, timer = 10;
 bool toRing = false;
 
-void setHue(){
-  for (int i = 0; i < NUM_LEDS; i++) {
-      leds[i] = CHSV(hue + (i * 10), 255, 255);
-  }
-  EVERY_N_MILLISECONDS(15){
-    hue++;
+void setHue(int pattern){
+  switch(pattern){
+    case 0:
+      for (int i = 0; i < NUM_LEDS; i++) {
+          leds[i] = CHSV(hue + (i * 10), 255, 255);
+      }
+      EVERY_N_MILLISECONDS(15){
+        hue++;
+      }
+      break;
+    case 1:
+      for (int i = 0; i<NUM_LEDS; (i < NUM_LEDS)?i++:i=0) {
+        leds[i] = CHSV(0, 0, 225);
+        fadeToBlackBy(leds, NUM_LEDS, 20);
+      }
+      break;
+    default:
+      break;
   }
 }
 void setDisplayNumber(int num){// set black pixels to show characters | num is a 4 digit number
@@ -176,7 +188,7 @@ void setup() {
 
 void loop() {
   timeTracker(menu);
-  setHue();
+  setHue(1);
   SetDisplay(menu);
   FastLED.show();
 }
