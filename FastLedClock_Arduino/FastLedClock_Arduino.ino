@@ -17,8 +17,9 @@ bool toRing = false;
 
 void setHue(int pattern){
   switch(pattern){
+    int i=0;
     case 0:
-      for (int i = 0; i < NUM_LEDS; i++) {
+      for ( i = 0; i < NUM_LEDS; i++) {
           leds[i] = CHSV(hue + (i * 10), 255, 255);
       }
       EVERY_N_MILLISECONDS(15){
@@ -26,9 +27,23 @@ void setHue(int pattern){
       }
       break;
     case 1:
-      for (int i = 0; i<NUM_LEDS; (i < NUM_LEDS)?i++:i=0) {
+      i=0;
+      while(true){
         leds[i] = CHSV(0, 0, 225);
         fadeToBlackBy(leds, NUM_LEDS, 20);
+        EVERY_N_MILLISECONDS(15){
+          (i < NUM_LEDS)?i++:i=0;
+        }
+      }
+      break;
+    case 2:
+      i=0;
+      while(true){
+        leds[i] = CHSV(random(0, 255), 0, 225);
+        fadeToBlackBy(leds, NUM_LEDS, 20);
+        EVERY_N_MILLISECONDS(15){
+          (i < NUM_LEDS)?i++:i=0;
+        }
       }
       break;
     default:
