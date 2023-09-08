@@ -106,16 +106,6 @@ void setDisplayNumber(int num){// set black pixels to show characters | num is a
   }
 }
 
-/*
-void setAlarm(int minuts){
-  if(toRing){
-    EVERY_N_MINUTES(minuts){
-      playBuzzer();
-      toRing = false;
-    }
-  }
-}
-*/
 void playBuzzer(){
   while (true) {
     EVERY_N_MILLISECONDS(500){
