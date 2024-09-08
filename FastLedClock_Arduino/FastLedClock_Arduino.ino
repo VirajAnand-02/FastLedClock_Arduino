@@ -1,199 +1,132 @@
-#include<FastLED.h>
-#include "DHT.h"
+#include <FastLED.h>
+#include "uRTCLib.h"
 
-#define DHTPIN 2
-#define DHTTYPE DHT11
-#define NUM_LEDS 28
-#define LED_PIN 3
-#define BUZZER_PIN 4
+#define NUM_LEDS 29
+#define LED_PIN 2
+#define BRIGHTNESS 128
+#define RTC_ADDRESS 0x68
 
-DHT dht(DHTPIN, DHTTYPE);
 CRGB leds[NUM_LEDS];
 uint8_t hue = 0;
-unsigned long milSec = millis();
-int number = 0000;
-int hrTen, hrOne, minTen, minOne, temperature = 20, humidity = 80, time = 0000, menu = 1, timer = 10;
-bool toRing = false;
+uRTCLib rtc(RTC_ADDRESS);
 
-void setHue(int pattern){
-  switch(pattern){
-    int i=0;
-    case 0:
-      for ( i = 0; i < NUM_LEDS; i++) {
-          leds[i] = CHSV(hue + (i * 10), 255, 255);
-      }
-      EVERY_N_MILLISECONDS(15){
-        hue++;
-      }
-      break;
-    case 1:
-      i=0;
-      while(true){
-        leds[i] = CHSV(0, 0, 225);
-        fadeToBlackBy(leds, NUM_LEDS, 20);
-        EVERY_N_MILLISECONDS(15){
-          (i < NUM_LEDS)?i++:i=0;
-        }
-      }
-      break;
-    case 2:
-      i=0;
-      while(true){
-        leds[i] = CHSV(random(0, 255), 0, 225);
-        fadeToBlackBy(leds, NUM_LEDS, 20);
-        EVERY_N_MILLISECONDS(15){
-          (i < NUM_LEDS)?i++:i=0;
-        }
-      }
-      break;
-    default:
-      break;
-  }
-}
-void setDisplayNumber(int num){// set black pixels to show characters | num is a 4 digit number
-  int zeroIndex = 0;// dispNum should be zero index
-  int mod = 10000, div =1000;
-  for(int i=0;i<4;i++){
-    int N = (num%mod)/div;
-    switch(N){
-      case 0:
-        leds[zeroIndex + 6] = CHSV(0, 0, 0);
-        break;
-      case 1:
-        leds[zeroIndex] = CHSV(0, 0, 0);
-        leds[zeroIndex + 1] = CHSV(0, 0, 0);
-        leds[zeroIndex + 4] = CHSV(0, 0, 0);
-        leds[zeroIndex + 5] = CHSV(0, 0, 0);
-        leds[zeroIndex + 6] = CHSV(0, 0, 0);
-        break;
-      case 2:
-        leds[zeroIndex] = CHSV(0, 0, 0);
-        leds[zeroIndex + 3] = CHSV(0, 0, 0);
-        break;
-      case 3:
-        leds[zeroIndex] = CHSV(0, 0, 0);
-        leds[zeroIndex + 5] = CHSV(0, 0, 0);
-        break;
-      case 4:
-        leds[zeroIndex + 1] = CHSV(0, 0, 0);
-        leds[zeroIndex + 4] = CHSV(0, 0, 0);
-        leds[zeroIndex + 5] = CHSV(0, 0, 0);
-        break;
-      case 5:
-        leds[zeroIndex + 2] = CHSV(0, 0, 0);
-        leds[zeroIndex + 5] = CHSV(0, 0, 0);
-        break;
-      case 6:
-        leds[zeroIndex + 2] = CHSV(0, 0, 0);
-        break;
-      case 7:
-        leds[zeroIndex] = CHSV(0, 0, 0);
-        leds[zeroIndex + 4] = CHSV(0, 0, 0);
-        leds[zeroIndex + 5] = CHSV(0, 0, 0);
-        leds[zeroIndex + 6] = CHSV(0, 0, 0);
-        break;
-      case 8:
-        break;
-      case 9:
-        leds[zeroIndex + 5] = CHSV(0, 0, 0);
-        break;
-      default:
-        break;
-    }
-    zeroIndex += 7;
-    mod /= 10;
-    div /= 10;
-  }
-}
+int currentHour = 0;
+int currentMinute = 0;
+int currentSecond = 0;
 
-void playBuzzer(){
-  while (true) {
-    EVERY_N_MILLISECONDS(500){
-      digitalWrite(BUZZER_PIN, HIGH);
-    }
-    EVERY_N_MILLISECONDS(500){
-      digitalWrite(BUZZER_PIN, LOW);
-    }
-  }
-}
-
-void setTemp(){
-  temperature = dht.readTemperature();
-  setDisplayNumber(temperature*100);
-  leds[14 + 3] = CHSV(0, 0, 0);// degree symbol
-  leds[14 + 4] = CHSV(0, 0, 0);
-  leds[14 + 5] = CHSV(0, 0, 0);
-  leds[21 + 2] = CHSV(0, 0, 0);// C
-  leds[21 + 3] = CHSV(0, 0, 0);
-}
-
-void setHumi(){
-  humidity = dht.readHumidity();
-  setDisplayNumber(humidity*100);
-  leds[14 + 0] = CHSV(0, 0, 0);// - symbol
-  leds[14 + 1] = CHSV(0, 0, 0);
-  leds[14 + 2] = CHSV(0, 0, 0);
-  leds[14 + 3] = CHSV(0, 0, 0);
-  leds[14 + 4] = CHSV(0, 0, 0);
-  leds[14 + 5] = CHSV(0, 0, 0);
-  leds[21 + 1] = CHSV(0, 0, 0);// H
-  leds[21 + 4] = CHSV(0, 0, 0);
-}
-
-void setTimer(){
-  if(timer != 0){
-    setDisplayNumber(timer);
-    EVERY_N_SECONDS(1){
-      timer--;
-    }
-  }else{
-    for (int i = 0; i < NUM_LEDS; i++) {
-      leds[i] = CHSV(i, 255, 255);
-    }
-    setDisplayNumber(timer);
-    playBuzzer();
-  }
-
-}
-
-void timeTracker(int status){
-  if(time > 2359)
-    time = 0000;
-    EVERY_N_MILLISECONDS(10){
-      time++;
-    }
-}
-
-void SetDisplay(int menu){
-  switch(menu){
-    case 1:// time
-      setDisplayNumber(time);
-      break;
-    case 2:// Temp
-      setTemp();
-      break;
-    case 3:// Humidity
-      setHumi();
-      break;
-    case 4:// Timer
-      setTimer();
-      break;
-    default:
-      break;
-  }
-}
+// Segment mapping
+const int SEGMENT_MAP[7] = { 1, 2, 3, 4, 5, 6, 0 };
+const uint8_t DIGIT_MAP[10][7] = {
+  { 1, 1, 1, 1, 1, 0, 1 },  // 0
+  { 0, 1, 1, 0, 0, 0, 0 },  // 1
+  { 1, 1, 0, 1, 1, 1, 0 },  // 2
+  { 1, 1, 1, 1, 0, 1, 0 },  // 3
+  { 0, 1, 1, 0, 0, 1, 1 },  // 4
+  { 1, 0, 1, 1, 0, 1, 1 },  // 5
+  { 1, 0, 1, 1, 1, 1, 1 },  // 6
+  { 1, 1, 1, 0, 0, 0, 0 },  // 7
+  { 1, 1, 1, 1, 1, 1, 1 },  // 8
+  { 1, 1, 1, 1, 0, 1, 1 }   // 9
+};
 
 void setup() {
-  delay(500);
-  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(10);
-  pinMode(BUZZER_PIN, OUTPUT);
-  dht.begin();
+  Serial.begin(9600);
+  Serial.println("Serial OK");
+
+  setupLEDs();
+  setupRTC();
 }
 
 void loop() {
-  timeTracker(menu);
-  setHue(1);
-  SetDisplay(menu);
+  updateTime();
+  updateLEDs();
+  displayTime();
   FastLED.show();
+  delay(5);
+}
+
+void setupLEDs() {
+  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.setBrightness(BRIGHTNESS);
+}
+
+void setupRTC() {
+  URTCLIB_WIRE.begin();
+  rtc.refresh();
+
+  if (rtc.year() < 2024) {
+    const char* dateStr = __DATE__;  // Format: "Mmm dd yyyy"
+    const char* timeStr = __TIME__;  // Format: "hh:mm:ss"
+
+    char monthStr[4];
+    int day, year, hour, minute, second;
+
+    sscanf(dateStr, "%s %d %d", monthStr, &day, &year);
+    sscanf(timeStr, "%d:%d:%d", &hour, &minute, &second);
+
+    int month = monthStringToNumber(monthStr);
+    int dayOfWeek = 1;
+    rtc.set(second, minute, hour, dayOfWeek, day, month, year - 2000);
+    Serial.println("RTC time set to compilation time");
+  } else {
+    Serial.println("RTC time is valid, no need to set.");
+  }
+}
+
+void updateTime() {
+  rtc.refresh();
+  currentHour = rtc.hour();
+  currentMinute = rtc.minute();
+  currentSecond = rtc.second();
+
+  Serial.print(currentHour);
+  Serial.print(':');
+  Serial.print(currentMinute);
+  Serial.print(':');
+  Serial.println(currentSecond);
+}
+
+void updateLEDs() {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CHSV(hue + (i * 2), 255, 255);
+  }
+  hue++;
+}
+
+void displayTime() {
+  setDisplayNumber(0, currentHour / 10);
+  setDisplayNumber(1, currentHour % 10);
+  setDisplayNumber(2, currentMinute / 10);
+  setDisplayNumber(3, currentMinute % 10);
+
+  // blink
+  if (currentSecond % 2 == 0) {
+    leds[NUM_LEDS - 1] = CHSV(0, 0, 0);
+  }
+}
+
+void setDisplayNumber(int index, int number) {
+  if (index < 0 || index >= 4 || number < 0 || number > 9) {
+    return;
+  }
+
+  int zeroIndex = index * 7;
+
+  // set seg acc to the digit map
+  for (int i = 0; i < 7; i++) {
+    if (!DIGIT_MAP[number][i]) {
+      leds[zeroIndex + SEGMENT_MAP[i]] = CHSV(0, 0, 0);
+    }
+  }
+}
+
+int monthStringToNumber(const char* monthStr) {
+  const char* months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  for (int i = 0; i < 12; i++) {
+    if (strcmp(monthStr, months[i]) == 0) {
+      return i + 1;
+    }
+  }
+  return 0;
 }
