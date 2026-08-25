@@ -396,7 +396,9 @@ third frame (~20 steps/second).
 
 ### Sources
 
-`readClock()` prefers the DS1307. On every successful read it also refreshes a
+`readClock()` prefers the DS1307 and polls it at most once per second; between
+polls it returns a cached time. This keeps the LED animation running at ~60 fps
+without repeatedly issuing I2C reads. On every successful read it also refreshes a
 software clock; if the RTC later stops responding, that software clock keeps ticking
 from `millis()` so the display never freezes. If no RTC is present at boot, the
 software clock is seeded to 12:00:00.

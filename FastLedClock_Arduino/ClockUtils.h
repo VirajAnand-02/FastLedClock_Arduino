@@ -12,6 +12,9 @@
 
 // Software-clock fallback: keeps ticking if the RTC fails or is absent.
 namespace {
+// The DS1307 only changes its time registers once per second.  Limit I2C
+// transactions to that cadence while the LED animation continues at 60 fps.
+constexpr uint16_t RTC_POLL_MS = 1000;
 uint32_t lastValidRtcMs = 0;
 uint8_t lastValidHour = 0, lastValidMinute = 0, lastValidSecond = 0;
 }
@@ -36,20 +39,32 @@ static void seedSoftwareClock(uint8_t hour, uint8_t minute, uint8_t second) {
   lastValidRtcMs = millis() - 1000;
 }
 
-// Read the current time. Prefers the RTC; falls back to the software clock,
-// so this always returns true once seeded (or after a successful RTC write).
+// Read the current time. The cached time is returned between RTC polls, so this
+// is safe to call every display frame without issuing an I2C transaction each
+// time. Prefers the RTC; falls back to the software clock, so this always
+// returns true once seeded (or after a successful RTC write).
 static bool readClock(uint8_t& hourOut, uint8_t& minuteOut, uint8_t& secondOut) {
   static tmElements_t rtcTm;
+  static uint32_t lastRtcPollMs = 0;
+  static bool hasPolledRtc = false;
 
-  if (RTC.read(rtcTm)) {
-    lastValidHour = rtcTm.Hour;
-    lastValidMinute = rtcTm.Minute;
-    lastValidSecond = rtcTm.Second;
-    lastValidRtcMs = millis();
-    hourOut = rtcTm.Hour;
-    minuteOut = rtcTm.Minute;
-    secondOut = rtcTm.Second;
-    return true;
+  uint32_t now = millis();
+  bool pollDue = !hasPolledRtc || (uint32_t)(now - lastRtcPollMs) >= RTC_POLL_MS;
+
+  if (pollDue) {
+    hasPolledRtc = true;
+    lastRtcPollMs = now;
+
+    if (RTC.read(rtcTm)) {
+      lastValidHour = rtcTm.Hour;
+      lastValidMinute = rtcTm.Minute;
+      lastValidSecond = rtcTm.Second;
+      lastValidRtcMs = now;
+      hourOut = rtcTm.Hour;
+      minuteOut = rtcTm.Minute;
+      secondOut = rtcTm.Second;
+      return true;
+    }
   }
 
   static bool reportedError = false;
